@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+#
+# Wrapper for tar-sorted, tuned to filesystem images
+#
+
+# Check commandline
+[ -n "$2" ] || {
+    echo "Usage: $0 <dest-file> <source-dir>" >&2
+    exit 1
+}
+
+DESTFILE="$1"
+SOURCEDIR="$2"
+
+# Get script path so we can find tar-sorted.py
+cd "$(dirname "$0")"
+SCRIPT_PATH="$PWD"
+
+# Go to source dir
+cd "$SOURCEDIR"
+
+# Determine compressor by examining DESTFILE extension
+case "${DESTFILE##*.}" in
+    gz)
+        "$SCRIPT_PATH/tar-sorted.py" -0 .|tar cvf - --null --no-recursion --numeric-owner -T -|gzip -9 > "$DESTFILE"
+        ;;
+    bz2)
+        "$SCRIPT_PATH/tar-sorted.py" -0 .|tar cvf - --null --no-recursion --numeric-owner -T -|bzip2 -9 > "$DESTFILE"
+        ;;
+    xz)
+        "$SCRIPT_PATH/tar-sorted.py" -0 .|tar cvf - --null --no-recursion --numeric-owner -T -|xz -9e > "$DESTFILE"
+        ;;
+    lzo)
+        "$SCRIPT_PATH/tar-sorted.py" -0 .|tar cvf - --null --no-recursion --numeric-owner -T -|lzop -9 > "$DESTFILE"
+        ;;
+    *)
+        echo "\"$DESTFILE\": Unsupported file type" >&2
+        exit 1
+        ;;
+esac
+
+
+
